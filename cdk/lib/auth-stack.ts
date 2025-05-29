@@ -6,18 +6,6 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 
-export class AuthBackendStack extends Stack {
-    constructor(scope: Construct, id: string, props?: StackProps) {
-        super(scope, id, props);
-
-        const authLambda = new lambda.Function(this, 'AuthHandler', {
-            runtime: lambda.Runtime.PYTHON_3_12,
-            handler: 'handler.main', // handler.py の main 関数
-            code: lambda.Code.fromAsset(path.join(__dirname, '../../src/auth')),
-        });
-    }
-}
-
 export class AuthStack extends cdk.Stack {
     public readonly userPool: cognito.UserPool;
     public readonly userPoolClient: cognito.UserPoolClient;
@@ -62,6 +50,17 @@ export class AuthStack extends cdk.Stack {
                 userPassword: true,
             },
         });
+
+        const authLambda = new lambda.Function(this, 'AuthHandler', {
+            runtime: lambda.Runtime.PYTHON_3_12,
+            handler: 'handler.main', // handler.py の main 関数
+            code: lambda.Code.fromAsset(path.join(__dirname, '../../src/auth')),
+            environment: {
+                USER_POOL_ID: this.userPool.userPoolId,
+                APP_CLIENT_ID: this.userPoolClient.userPoolClientId,
+            },
+        });
+
 
         // 出力
         new cdk.CfnOutput(this, 'UserPoolId', {
