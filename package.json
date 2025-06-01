@@ -1,0 +1,7 @@
+{
+    "scripts": {
+        "lint": "npm run lint:ts && npm run lint:py",
+        "lint:ts": "eslint . --ext .ts,.tsx",
+        "lint:py": "poetry run ruff check src"
+    }
+}

@@ -1,0 +1,10 @@
+from fastapi import APIRouter, Depends
+
+from ..dependencies import get_current_user
+
+router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.get("/me")
+def read_current_user(user=Depends(get_current_user)):
+    return {"username": user["username"]}
