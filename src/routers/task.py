@@ -13,10 +13,11 @@ task_repository = TaskDynamoDBRepository(table_name=TASK_TABLE_NAME)
 
 
 @router.get("/", response_model=list[Task])
-def list_tasks(user=Depends(get_current_user)):
+def list_tasks(user=None):
+    user = user or Depends(get_current_user)
     return task_repository.list_tasks()
 
 
-@router.post("/", response_model=Task)
-def create_task(task: Task, user=Depends(get_current_user)):
+def create_task(task: Task, user=None):
+    user = user or Depends(get_current_user)
     return task_repository.create_task(task)

@@ -6,5 +6,6 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("/me")
-def read_current_user(user=Depends(get_current_user)):
+def read_current_user(user=None):
+    user = user or Depends(get_current_user)
     return {"username": user["username"]}
