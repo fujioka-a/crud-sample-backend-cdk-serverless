@@ -1,7 +1,8 @@
-FROM public.ecr.aws/lambda/python:3.13
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.7.1 /lambda-adapter /opt/extensions/lambda-adapter
+FROM public.ecr.aws/docker/library/python:3.12.0-slim-bullseye
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 
-# 依存関係のインストールなど（省略）
+WORKDIR /src
+ADD . .
+RUN pip install -r requirements.txt
 
-ENTRYPOINT ["uvicorn"]
-CMD [ "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "main.py"]
