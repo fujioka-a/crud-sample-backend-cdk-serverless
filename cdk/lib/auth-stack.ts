@@ -54,7 +54,7 @@ export class AuthStack extends cdk.Stack {
         const authLambda = new lambda.Function(this, 'AuthHandler', {
             runtime: lambda.Runtime.PYTHON_3_12,
             handler: 'handler.main', // handler.py の main 関数
-            code: lambda.Code.fromAsset(path.join(__dirname, '../../src/auth')),
+            code: lambda.Code.fromAsset(path.join(__dirname, '../../src/dependencies')),
             environment: {
                 USER_POOL_ID: this.userPool.userPoolId,
                 APP_CLIENT_ID: this.userPoolClient.userPoolClientId,
