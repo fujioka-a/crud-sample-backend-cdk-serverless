@@ -1,6 +1,7 @@
 # lambda_functions/user_info_handler.py
 import json
 import os
+from urllib.request import urlopen
 
 import boto3
 import jwt
@@ -13,9 +14,6 @@ APP_CLIENT_ID = os.environ.get("APP_CLIENT_ID")
 # === JWKSのキャッシュ ===
 cognito_client = boto3.client("cognito-idp", region_name=REGION)
 jwks_url = f"https://cognito-idp.{REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json"
-
-import json
-from urllib.request import urlopen
 
 # 1. JWKS取得（Lambda起動時に1度だけ）
 jwks = json.loads(urlopen(jwks_url).read())
