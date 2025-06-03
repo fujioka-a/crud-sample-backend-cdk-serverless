@@ -5,15 +5,17 @@ import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 
-export class AuthStack extends cdk.Stack {
+export class InfraStack extends cdk.Stack {
     public readonly userPool: cognito.UserPool;
     public readonly userPoolClient: cognito.UserPoolClient;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        // ユーザープールの作成
+        // = 作成 ===============================================================================================
+        // 認証系 ============================
         this.userPool = new cognito.UserPool(this, 'UserPool', {
             userPoolName: 'sample-user-pool',
             selfSignUpEnabled: true,
@@ -61,8 +63,19 @@ export class AuthStack extends cdk.Stack {
             },
         });
 
+        // DB系 ============================
+        const tasksTable = new dynamodb.Table(this, 'TasksTable', {
+            partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
 
-        // 出力
+        // テーブル名を環境変数として Lambda に渡す
+        authLambda.addEnvironment('TASKS_TABLE_NAME', tasksTable.tableName);
+
+        // Lambda に DynamoDB へのアクセス権限を付与
+        tasksTable.grantReadWriteData(authLambda);
+
+        // = 出力 ===============================================================================================
         new cdk.CfnOutput(this, 'UserPoolId', {
             value: this.userPool.userPoolId,
         });
