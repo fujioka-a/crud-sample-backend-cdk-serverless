@@ -174,3 +174,5 @@ cython_debug/
 
 .vscode/
 .DS_Store
+
+copilot-instructions.md
