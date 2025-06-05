@@ -104,3 +104,27 @@ class TaskDynamoDBRepository:
         except ClientError as e:
             logger.error(f"Failed to update task with ID {task_id}: {e}")
             raise DataAccessError(f"Failed to update task with ID {task_id}: {e}") from e
+
+    def get_task(self, task_id: str) -> Task:
+        """
+        指定されたタスクIDのタスクを取得します。
+
+        :param task_id: 取得するタスクのID
+        :return: 取得したタスク
+        :raises InvalidParameterError: タスクIDが無効な場合
+        :raises DataNotFoundError: 指定されたタスクが存在しない場合
+        :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
+        """
+        if not task_id:
+            logger.error("Task ID is required for retrieval.")
+            raise InvalidParameterError("Task ID", task_id, "Task ID is required for retrieval.")
+        try:
+            response = self.table.get_item(Key={"id": task_id})
+            item = response.get("Item")
+            if not item:
+                logger.error(f"Task with ID {task_id} not found.")
+                raise DataNotFoundError(f"Task with ID {task_id} not found.")
+            return Task(**item)
+        except ClientError as e:
+            logger.error(f"Failed to retrieve task with ID {task_id}: {e}")
+            raise DataAccessError(f"Failed to retrieve task with ID {task_id}: {e}") from e

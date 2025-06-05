@@ -65,14 +65,14 @@ def test_list_tasks(repository, dynamodb_mock):
 
 def test_create_task(repository):
     # Arrange
-    task = Task(id="1", name="Task 1", description="Description 1")
+    task = Task(id="1", title="Task 1", description="Description 1")
 
     # Act
     created_task = repository.create_task(task)
 
     # Assert
     assert created_task.id == "1"
-    assert created_task.name == "Task 1"
+    assert created_task.title == "Task 1"
 
 
 def test_delete_task(repository, dynamodb_mock):
@@ -85,6 +85,28 @@ def test_delete_task(repository, dynamodb_mock):
     # Assert
     with pytest.raises(DataNotFoundError):
         repository.delete_task("1")
+
+
+def test_get_task(repository, dynamodb_mock):
+    # Arrange
+    dynamodb_mock.put_item(
+        Item={
+            "id": "1",
+            "title": "Task 1",
+            "description": "Description 1",
+            "due_date": "2025-12-31",
+            "status": "pending",
+            "priority": "high",
+        }
+    )
+
+    # Act
+    task = repository.get_task("1")
+
+    # Assert
+    assert task.id == "1"
+    assert task.title == "Task 1"
+    assert task.description == "Description 1"
 
 
 def test_update_task(repository, dynamodb_mock):
