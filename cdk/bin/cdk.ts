@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+
 import { InfraStack } from '../lib/infra';
 import { AppStack } from '../lib/app';
+import { GlobalStack } from '../lib/global'
 
 const app = new cdk.App();
 
@@ -12,7 +14,11 @@ class BackendStack extends cdk.Stack {
     super(scope, id, props);
 
     new InfraStack(this, 'InfraStack');
-    new AppStack(this, 'AppStack');
+    const appStack = new AppStack(this, 'AppStack');
+
+    new GlobalStack(app, 'GlobalStack', {
+      originUrl: appStack.functionUrl,
+    });
   }
 }
 

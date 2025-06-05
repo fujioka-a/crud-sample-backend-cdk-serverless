@@ -5,6 +5,8 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 
 export class AppStack extends cdk.Stack {
+  public readonly functionUrl: string; // Lambda Function URL をエクスポート
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -39,9 +41,12 @@ export class AppStack extends cdk.Stack {
     const cfnFunction = webAdapterLambda.node.defaultChild as lambda.CfnFunction;
     cfnFunction.addPropertyOverride('FunctionUrlConfig.InvokeMode', 'RESPONSE_STREAM');
 
+    // Lambda Function URL をエクスポート
+    this.functionUrl = functionUrlObj.url;
+
     new cdk.CfnOutput(this, 'FastAPIFunctionUrl', {
       description: "Function URL for FastAPI function",
-      value: functionUrlObj.url,
+      value: this.functionUrl,
     });
 
     new cdk.CfnOutput(this, 'FastAPIFunction', {
