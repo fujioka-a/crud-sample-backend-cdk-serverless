@@ -1,10 +1,12 @@
-from pydantic import BaseModel, Field
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class Task(BaseModel):
     id: str
-    title: str = Field(..., max_length=50)
-    description: str | None = None
-    due_date: str
-    status: str
-    priority: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None

@@ -3,7 +3,7 @@ import logging
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
 
-from ..exception.errors import DataAccessError, InvalidParameterError
+from ..exception.errors import DataAccessError, DataNotFoundError, InvalidParameterError
 from ..schemas.task import Task
 
 logger = logging.getLogger(__name__)
@@ -45,3 +45,62 @@ class TaskDynamoDBRepository:
         except ClientError as e:
             logger.error(f"Failed to create task: {e}")
             raise DataAccessError(f"Failed to create task: {e}") from e
+
+    def delete_task(self, task_id: str) -> None:
+        """
+        指定されたタスクIDのタスクを削除します。
+
+        :param task_id: 削除するタスクのID
+        :raises InvalidParameterError: タスクIDが無効な場合
+        :raises DataNotFoundError: 指定されたタスクが存在しない場合
+        :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
+        """
+        if not task_id:
+            logger.error("Task ID is required for deletion.")
+            raise InvalidParameterError("Task ID", task_id, "Task ID is required for deletion.")
+        try:
+            response = self.table.delete_item(
+                Key={"id": task_id},
+                ConditionExpression="attribute_exists(id)",  # タスクが存在する場合のみ削除
+            )
+            if response.get("Attributes") is None:
+                logger.error(f"Task with ID {task_id} not found.")
+                raise DataNotFoundError(f"Task with ID {task_id} not found.")
+        except ClientError as e:
+            logger.error(f"Failed to delete task with ID {task_id}: {e}")
+            raise DataAccessError(f"Failed to delete task with ID {task_id}: {e}") from e
+
+    def update_task(self, task_id: str, updated_task: Task) -> Task:
+        """
+        指定されたタスクIDのタスクを更新します。
+
+        :param task_id: 更新するタスクのID
+        :param updated_task: 更新後のタスクデータ
+        :return: 更新されたタスク
+        :raises InvalidParameterError: タスクIDまたは更新データが無効な場合
+        :raises DataNotFoundError: 指定されたタスクが存在しない場合
+        :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
+        """
+        if not task_id:
+            logger.error("Task ID is required for update.")
+            raise InvalidParameterError("Task ID", task_id, "Task ID is required for update.")
+        if not updated_task:
+            logger.error("Updated task data is required.")
+            raise InvalidParameterError("Updated Task", updated_task, "Updated task data is required.")
+        try:
+            response = self.table.update_item(
+                Key={"id": task_id},
+                UpdateExpression="SET #name = :name, #description = :description",
+                ExpressionAttributeNames={"#name": "name", "#description": "description"},
+                ExpressionAttributeValues={":name": updated_task.name, ":description": updated_task.description},
+                ConditionExpression="attribute_exists(id)",  # タスクが存在する場合のみ更新
+                ReturnValues="ALL_NEW",
+            )
+            attributes = response.get("Attributes")
+            if not attributes:
+                logger.error(f"Task with ID {task_id} not found.")
+                raise DataNotFoundError(f"Task with ID {task_id} not found.")
+            return Task(**attributes)
+        except ClientError as e:
+            logger.error(f"Failed to update task with ID {task_id}: {e}")
+            raise DataAccessError(f"Failed to update task with ID {task_id}: {e}") from e
