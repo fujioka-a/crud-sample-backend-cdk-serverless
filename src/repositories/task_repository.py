@@ -59,51 +59,46 @@ class TaskDynamoDBRepository:
             logger.error("Task ID is required for deletion.")
             raise InvalidParameterError("Task ID", task_id, "Task ID is required for deletion.")
         try:
-            response = self.table.delete_item(
+            self.table.delete_item(
                 Key={"id": task_id},
-                ConditionExpression="attribute_exists(id)",  # タスクが存在する場合のみ削除
+                ConditionExpression="attribute_exists(id)",
             )
-            if response.get("Attributes") is None:
-                logger.error(f"Task with ID {task_id} not found.")
-                raise DataNotFoundError(f"Task with ID {task_id} not found.")
         except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                logger.error(f"Task with ID {task_id} not found.")
+                raise DataNotFoundError(f"Task with ID {task_id} not found.") from e
+
             logger.error(f"Failed to delete task with ID {task_id}: {e}")
             raise DataAccessError(f"Failed to delete task with ID {task_id}: {e}") from e
 
-    def update_task(self, task_id: str, updated_task: Task) -> Task:
+    def update_task(self, task_id: str, updates: dict) -> Task:
         """
         指定されたタスクIDのタスクを更新します。
 
         :param task_id: 更新するタスクのID
-        :param updated_task: 更新後のタスクデータ
+        :param updates: 更新するタスクの属性と値の辞書
         :return: 更新されたタスク
         :raises InvalidParameterError: タスクIDまたは更新データが無効な場合
         :raises DataNotFoundError: 指定されたタスクが存在しない場合
         :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
         """
-        if not task_id:
-            logger.error("Task ID is required for update.")
-            raise InvalidParameterError("Task ID", task_id, "Task ID is required for update.")
-        if not updated_task:
-            logger.error("Updated task data is required.")
-            raise InvalidParameterError("Updated Task", updated_task, "Updated task data is required.")
-        try:
-            response = self.table.update_item(
-                Key={"id": task_id},
-                UpdateExpression="SET #name = :name, #description = :description",
-                ExpressionAttributeNames={"#name": "name", "#description": "description"},
-                ExpressionAttributeValues={":name": updated_task.name, ":description": updated_task.description},
-                ConditionExpression="attribute_exists(id)",  # タスクが存在する場合のみ更新
-                ReturnValues="ALL_NEW",
-            )
-            attributes = response.get("Attributes")
-            if not attributes:
-                logger.error(f"Task with ID {task_id} not found.")
-                raise DataNotFoundError(f"Task with ID {task_id} not found.")
-            return Task(**attributes)
-        except ClientError as e:
-            logger.error(f"Failed to update task with ID {task_id}: {e}")
-            raise DataAccessError(f"Failed to update task with ID {task_id}: {e}") from e
+        if "id" in updates:
+            raise InvalidParameterError("IDは更新できません。")
+
+        update_expression = "SET " + ", ".join(f"{key} = :{key}" for key in updates.keys())
+        expression_attribute_values = {f":{key}": value for key, value in updates.items()}
+
+        response = self.table.update_item(
+            Key={"id": task_id},
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values,
+            ReturnValues="ALL_NEW",
+        )
+
+        if "Attributes" not in response:
+            raise DataNotFoundError(f"Task ID {task_id} が見つかりません。")
+
+        return Task(**response["Attributes"])
 
     def get_task(self, task_id: str) -> Task:
         """

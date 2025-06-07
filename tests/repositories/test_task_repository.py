@@ -2,7 +2,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from src.exception.errors import DataNotFoundError, InvalidParameterError
+from src.exception.errors import DataAccessError, DataNotFoundError, InvalidParameterError
 from src.repositories.task_repository import TaskDynamoDBRepository
 from src.schemas.task import Task
 
@@ -77,7 +77,7 @@ def test_create_task(repository):
 
 def test_delete_task(repository, dynamodb_mock):
     # Arrange
-    dynamodb_mock.put_item(Item={"id": "1", "name": "Task 1", "description": "Description 1"})
+    dynamodb_mock.put_item(Item={"id": "1", "title": "Task 1", "description": "Description 1"})
 
     # Act
     repository.delete_task("1")
@@ -111,12 +111,12 @@ def test_get_task(repository, dynamodb_mock):
 
 def test_update_task(repository, dynamodb_mock):
     # Arrange
-    dynamodb_mock.put_item(Item={"id": "1", "name": "Task 1", "description": "Description 1"})
-    updated_task = Task(id="1", name="Updated Task", description="Updated Description")
+    dynamodb_mock.put_item(Item={"id": "1", "title": "Task 1", "description": "Description 1"})
+    updated_task = {"title": "Updated Task", "description": "Updated Description"}
 
     # Act
     result = repository.update_task("1", updated_task)
 
     # Assert
-    assert result.name == "Updated Task"
+    assert result.title == "Updated Task"
     assert result.description == "Updated Description"
