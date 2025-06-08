@@ -4,13 +4,14 @@ import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
 
 from ..exception.errors import DataAccessError, DataNotFoundError, InvalidParameterError
+from ..repositories.interfaces import ITaskRepository
 from ..schemas.task import Task
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 
-class TaskDynamoDBRepository:
+class TaskDynamoDBRepository(ITaskRepository):
     def __init__(self, table_name: str):
         self.dynamodb = boto3.resource("dynamodb")
         self.table = self.dynamodb.Table(table_name)
@@ -46,30 +47,29 @@ class TaskDynamoDBRepository:
             logger.error(f"Failed to create task: {e}")
             raise DataAccessError(f"Failed to create task: {e}") from e
 
-    def delete_task(self, task_id: str) -> None:
+    def get_task(self, task_id: str) -> Task:
         """
-        指定されたタスクIDのタスクを削除します。
+        指定されたタスクIDのタスクを取得します。
 
-        :param task_id: 削除するタスクのID
+        :param task_id: 取得するタスクのID
+        :return: 取得したタスク
         :raises InvalidParameterError: タスクIDが無効な場合
         :raises DataNotFoundError: 指定されたタスクが存在しない場合
         :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
         """
         if not task_id:
-            logger.error("Task ID is required for deletion.")
-            raise InvalidParameterError("Task ID", task_id, "Task ID is required for deletion.")
+            logger.error("Task ID is required for retrieval.")
+            raise InvalidParameterError("Task ID", task_id, "Task ID is required for retrieval.")
         try:
-            self.table.delete_item(
-                Key={"id": task_id},
-                ConditionExpression="attribute_exists(id)",
-            )
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            response = self.table.get_item(Key={"id": task_id})
+            item = response.get("Item")
+            if not item:
                 logger.error(f"Task with ID {task_id} not found.")
-                raise DataNotFoundError(f"Task with ID {task_id} not found.") from e
-
-            logger.error(f"Failed to delete task with ID {task_id}: {e}")
-            raise DataAccessError(f"Failed to delete task with ID {task_id}: {e}") from e
+                raise DataNotFoundError(f"Task with ID {task_id} not found.")
+            return Task(**item)
+        except ClientError as e:
+            logger.error(f"Failed to retrieve task with ID {task_id}: {e}")
+            raise DataAccessError(f"Failed to retrieve task with ID {task_id}: {e}") from e
 
     def update_task(self, task_id: str, updates: dict) -> Task:
         """
@@ -100,26 +100,27 @@ class TaskDynamoDBRepository:
 
         return Task(**response["Attributes"])
 
-    def get_task(self, task_id: str) -> Task:
+    def delete_task(self, task_id: str) -> None:
         """
-        指定されたタスクIDのタスクを取得します。
+        指定されたタスクIDのタスクを削除します。
 
-        :param task_id: 取得するタスクのID
-        :return: 取得したタスク
+        :param task_id: 削除するタスクのID
         :raises InvalidParameterError: タスクIDが無効な場合
         :raises DataNotFoundError: 指定されたタスクが存在しない場合
         :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
         """
         if not task_id:
-            logger.error("Task ID is required for retrieval.")
-            raise InvalidParameterError("Task ID", task_id, "Task ID is required for retrieval.")
+            logger.error("Task ID is required for deletion.")
+            raise InvalidParameterError("Task ID", task_id, "Task ID is required for deletion.")
         try:
-            response = self.table.get_item(Key={"id": task_id})
-            item = response.get("Item")
-            if not item:
-                logger.error(f"Task with ID {task_id} not found.")
-                raise DataNotFoundError(f"Task with ID {task_id} not found.")
-            return Task(**item)
+            self.table.delete_item(
+                Key={"id": task_id},
+                ConditionExpression="attribute_exists(id)",
+            )
         except ClientError as e:
-            logger.error(f"Failed to retrieve task with ID {task_id}: {e}")
-            raise DataAccessError(f"Failed to retrieve task with ID {task_id}: {e}") from e
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                logger.error(f"Task with ID {task_id} not found.")
+                raise DataNotFoundError(f"Task with ID {task_id} not found.") from e
+
+            logger.error(f"Failed to delete task with ID {task_id}: {e}")
+            raise DataAccessError(f"Failed to delete task with ID {task_id}: {e}") from e

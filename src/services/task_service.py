@@ -1,16 +1,16 @@
 from typing import List
 
 from ..exception.errors import DataNotFoundError
-from ..repositories.task_repository import TaskDynamoDBRepository
+from ..repositories.interfaces import ITaskRepository
 from ..schemas.task import Task
 
 
 class TaskService:
-    def __init__(self, repository: TaskDynamoDBRepository):
+    def __init__(self, repository: ITaskRepository):
         """
         TaskService の初期化
 
-        :param repository: データ操作を行うリポジトリクラス
+        :param repository: データ操作を行うリポジトリインターフェース
         """
         self.repository = repository
 
