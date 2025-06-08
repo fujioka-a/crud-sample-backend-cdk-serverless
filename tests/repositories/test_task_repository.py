@@ -2,7 +2,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from src.exception.errors import DataAccessError, DataNotFoundError, InvalidParameterError
+from src.exceptions.errors import DataAccessError, DataNotFoundError, InvalidParameterError
 from src.repositories.task_repository import TaskDynamoDBRepository
 from src.schemas.task import Task
 

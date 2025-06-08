@@ -1,6 +1,6 @@
 from typing import List
 
-from ..exception.errors import DataNotFoundError
+from ..exceptions.errors import DataNotFoundError
 from ..repositories.interfaces import ITaskRepository
 from ..schemas.task import Task
 

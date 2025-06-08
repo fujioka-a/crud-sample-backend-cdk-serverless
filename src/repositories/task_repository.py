@@ -3,7 +3,7 @@ import logging
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
 
-from ..exception.errors import DataAccessError, DataNotFoundError, InvalidParameterError
+from ..exceptions.errors import DataAccessError, DataNotFoundError, InvalidParameterError
 from ..repositories.interfaces import ITaskRepository
 from ..schemas.task import Task
 
