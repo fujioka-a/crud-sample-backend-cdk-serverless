@@ -2,17 +2,20 @@ from abc import ABC, abstractmethod
 
 import jwt
 from fastapi import HTTPException, Request, status
-from jwt import InvalidTokenError, PyJWKClient
+from jwt import PyJWKClient
+from jwt.exceptions import InvalidTokenError
 
 from .config import get_settings
 
 settings = get_settings()
+
 
 # トークンデコーダーのインターフェース
 class TokenDecoder(ABC):
     @abstractmethod
     def decode_token(self, token: str):
         pass
+
 
 # Cognito用のトークンデコーダー
 class CognitoTokenDecoder(TokenDecoder):
@@ -36,19 +39,20 @@ class CognitoTokenDecoder(TokenDecoder):
         except InvalidTokenError as e:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
 
+
 # デフォルトのデコーダーをCognitoに設定
 token_decoder: TokenDecoder = CognitoTokenDecoder()
 
+
 def decode_token(token: str):
     return token_decoder.decode_token(token)
+
 
 # FastAPIのDependsで直接使える認証関数
 def get_current_user(request: Request) -> dict:
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header")
     token = auth_header.split(" ")[1]
     payload = decode_token(token)
     if not payload:
