@@ -102,7 +102,7 @@ def test_get_task_ok():
     app.dependency_overrides["src.routers.task.get_task_service"] = lambda: service
 
     response = client.get("/tasks/3")
-    assert response.status_code == 200 or response.status_code == 404
+    assert response.status_code == 200
 
 
 def test_update_task_ok():

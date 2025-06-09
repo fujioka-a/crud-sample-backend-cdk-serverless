@@ -83,7 +83,7 @@ class TaskDynamoDBRepository(ITaskRepository):
         :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
         """
         if "id" in updates:
-            raise InvalidParameterError("IDは更新できません。")
+            raise InvalidParameterError(key="id", value=updates["id"], message="IDは更新できません。")
 
         update_expression = "SET " + ", ".join(f"{key} = :{key}" for key in updates.keys())
         expression_attribute_values = {f":{key}": value for key, value in updates.items()}
