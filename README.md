@@ -16,7 +16,7 @@
 
 3. **認証**:
    - AWS Cognito を使用して認証を実装しています。
-   - トークンのデコードや検証は `src/core/security.py` や `src/dependencies/auth.py` で行われています。
+   - トークンのデコードや検証は `src/core/auth.py` で行われています。
 
 4. **データストレージ**:
    - DynamoDB を使用してタスクデータを保存しています。
@@ -39,11 +39,12 @@
 
 ### ディレクトリ構成
 - **`src`**: アプリケーションのソースコード。
-  - `routers/`: FastAPI のルーター。
-  - `schemas/`: Pydantic を使用したデータスキーマ。
-  - `repositories/`: データベース操作のロジック。
-  - `core/`: セキュリティや設定関連のコード。
-  - `dependencies/`: 依存関係（例: 認証）を管理するコード。
+  - `routers/`: FastAPI のルーター(プレゼンテーション層)
+  - `domains/`: ドメイン層
+    - `models/`: Pydantic を使用したデータスキーマ。
+    - `interfaces/`: リポジトリインターフェース。
+  - `repositories/`: リポジトリ操作のロジック。
+  - `core/`: 認証（Cognitoトークン検証）や設定関連のコード。
 
 - **`cdk`**: AWS CDK によるインフラストラクチャコード。
   - `lib/`: CDK スタックの定義。
