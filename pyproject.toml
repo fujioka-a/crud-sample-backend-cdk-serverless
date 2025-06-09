@@ -12,6 +12,7 @@ fastapi = "^0.115.12"
 uvicorn = "^0.34.2"
 pydantic = "^2.11.5"
 aws-lambda-powertools = "^3.13.0"
+injector = "^0.22.0"
 
 
 [tool.poetry.group.dev.dependencies]
