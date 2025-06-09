@@ -3,9 +3,9 @@ import logging
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
 
+from ..domains.interfaces.task_repository import ITaskRepository
+from ..domains.models.task import Task
 from ..exceptions.errors import DataAccessError, DataNotFoundError, InvalidParameterError
-from ..repositories.interfaces import ITaskRepository
-from ..schemas.task import Task
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)

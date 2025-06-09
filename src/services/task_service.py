@@ -1,8 +1,8 @@
 from typing import List
 
+from ..domains.interfaces.task_repository import ITaskRepository
+from ..domains.models.task import Task
 from ..exceptions.errors import DataNotFoundError
-from ..repositories.interfaces import ITaskRepository
-from ..schemas.task import Task
 
 
 class TaskService:

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..dependencies import injector
 from ..dependencies.auth import AuthService
-from ..schemas.task import Task
+from ..domains.models.task import Task
 from ..services.task_service import TaskService
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])

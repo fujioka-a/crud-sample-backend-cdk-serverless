@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from ..schemas.task import Task
+from ..models.task import Task
 
 
 class ITaskRepository(ABC):
