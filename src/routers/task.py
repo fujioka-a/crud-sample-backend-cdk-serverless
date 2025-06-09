@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..dependencies import injector
-from ..dependencies.auth import AuthService
+from ..core.auth import get_current_user
+from ..di.container import injector
 from ..domains.models.task import Task
 from ..services.task_service import TaskService
 
@@ -10,14 +10,6 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 def get_task_service() -> TaskService:
     return injector.get(TaskService)
-
-
-def get_auth_service() -> AuthService:
-    return injector.get(AuthService)
-
-
-def get_current_user(auth_service: AuthService = Depends(get_auth_service)):
-    return auth_service.get_current_user()
 
 
 # routing section ==========================================================
