@@ -1,0 +1,25 @@
+{
+    // 解析対象。src & tests に限定
+    "include": [
+        "src"
+    ],
+    // まだ手を付けないフォルダ
+    "exclude": [
+        "build",
+        "**/__pycache__"
+    ],
+    // Python のターゲットバージョン
+    "pythonVersion": "3.13",
+    // 型チェックモード: "basic" / "strict"
+    "typeCheckingMode": "basic",
+    // インクリメンタル導入用：ファイル単位で strict
+    // "strict": [
+    //     "src/service/**"
+    // ],
+    // stub・第三者ライブラリの検索パス（必要なら）
+    // "extraPaths": [
+    //     "src/utils/stubs"
+    // ],
+    // "reportMissingTypeStubs": true で stub 未整備のパッケージを警告
+    "reportMissingTypeStubs": false
+}
