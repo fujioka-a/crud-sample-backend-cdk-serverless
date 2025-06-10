@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crud-sample-backend-app
+    ports:
+      - "8000:8000"
+    environment:
+      - AWS_REGION=ap-northeast-1
+      - USER_POOL_ID=your_cognito_user_pool_id
+      - APP_CLIENT_ID=your_cognito_app_client_id
+    volumes:
+      - ./:/app
+    command: python run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crud-sample-backend-test
+    environment:
+      - AWS_REGION=ap-northeast-1
+      - USER_POOL_ID=your_cognito_user_pool_id
+      - APP_CLIENT_ID=your_cognito_app_client_id
+    volumes:
+      - ./:/app
+    command: sh -c "pip install pytest && pytest"

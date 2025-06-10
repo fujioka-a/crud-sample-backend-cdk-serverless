@@ -2,3 +2,26 @@ node_modules
 dist
 .next
 .env.local
+.git
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.egg-info
+.venv
+.env
+.DS_Store
+cdk.out
+*.log
+# VSCode
+.vscode
+# テスト成果物
+coverage*
+htmlcov
+.mypy_cache
+.pytest_cache
+# その他
+*.swp
+*.bak
