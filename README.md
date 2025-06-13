@@ -20,7 +20,7 @@
 
 4. **データストレージ**:
    - DynamoDB を使用してタスクデータを保存しています。
-   - タスクのリポジトリは `src/repositories/task_repository.py` に実装されています。
+   - タスクのリポジトリは `src/infrastructure/repositories/task_repository.py` に実装されています。
 
 5. **インフラストラクチャ**:
    - AWS CDK を使用してインフラストラクチャをコードで管理しています。
@@ -41,10 +41,14 @@
 - **`src`**: アプリケーションのソースコード。
   - `routers/`: FastAPI のルーター(プレゼンテーション層)
   - `domains/`: ドメイン層
-    - `models/`: Pydantic を使用したデータスキーマ。
+    - `models/`: Pydantic を使用したドメインモデル・スキーマ。
     - `interfaces/`: リポジトリインターフェース。
-  - `repositories/`: リポジトリ操作のロジック。
+    - `services/`: ビジネスロジック。
+  - `infrastructure/`: リポジトリ操作のロジック。
+    - `repositories/`: データベース操作の実装。
+    - `db`: 仮：データベース接続やセッション管理など。
   - `core/`: 認証（Cognitoトークン検証）や設定関連のコード。
+  - `di`: 依存性注入の設定。
 
 - **`cdk`**: AWS CDK によるインフラストラクチャコード。
   - `lib/`: CDK スタックの定義。
