@@ -4,6 +4,7 @@ dist
 .env.local
 .git
 __pycache__
+.pytest_cache
 *.pyc
 *.pyo
 *.pyd
@@ -14,6 +15,8 @@ __pycache__
 .env
 .DS_Store
 cdk.out
+cdk/cdk.out
+**/cdk.out
 *.log
 # VSCode
 .vscode
@@ -25,3 +28,11 @@ htmlcov
 # その他
 *.swp
 *.bak
+
+tests
+.github
+.pytest_cache
+.ruff_cache
+.venv
+.vscode
+README.md
