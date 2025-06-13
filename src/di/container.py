@@ -1,8 +1,8 @@
 from injector import Injector, Module, provider, singleton
 
 from ..domains.interfaces.task_repository import ITaskRepository
-from ..repositories.task_repository import TaskDynamoDBRepository
-from ..services.task_service import TaskService
+from ..infrastructure.repositories.task_repository import TaskDynamoDBRepository
+from ..usecase.task_handler import TaskManager
 
 
 class AppModule(Module):
@@ -14,8 +14,8 @@ class AppModule(Module):
 
     @singleton
     @provider
-    def provide_task_service(self, repo: ITaskRepository) -> TaskService:
-        return TaskService(repo)
+    def provide_task_service(self, repo: ITaskRepository) -> TaskManager:
+        return TaskManager(repo)
 
 
 injector = Injector([AppModule()])

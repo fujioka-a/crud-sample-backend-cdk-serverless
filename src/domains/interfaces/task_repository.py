@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
+from uuid import UUID
 
 from ..models.task import Task
 
@@ -10,7 +11,7 @@ class ITaskRepository(ABC):
         pass
 
     @abstractmethod
-    def create_task(self, task: Task) -> Task:
+    def create_task(self, task: Task) -> None:
         pass
 
     @abstractmethod
@@ -18,7 +19,7 @@ class ITaskRepository(ABC):
         pass
 
     @abstractmethod
-    def update_task(self, task_id: str, updated_task: Task) -> Task:
+    def update_task(self, updated_task: Task) -> None:
         pass
 
     @abstractmethod

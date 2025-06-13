@@ -3,9 +3,9 @@ import logging
 import boto3
 from botocore.exceptions import ClientError, EndpointConnectionError
 
-from ..domains.interfaces.task_repository import ITaskRepository
-from ..domains.models.task import Task
-from ..exceptions.errors import DataAccessError, DataNotFoundError, InvalidParameterError
+from ...domains.interfaces.task_repository import ITaskRepository
+from ...domains.models.task import Task
+from ...exceptions.errors import DataAccessError, DataNotFoundError, InvalidParameterError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -26,25 +26,28 @@ class TaskDynamoDBRepository(ITaskRepository):
                 tasks.extend([Task(**item) for item in response.get("Items", [])])
             return tasks
         except EndpointConnectionError as e:
-            logger.error("Failed to connect to DynamoDB endpoint.")
+            logger.exception("Failed to connect to DynamoDB endpoint.")
             raise DataAccessError("Failed to connect to DynamoDB endpoint.") from e
         except ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "ProvisionedThroughputExceededException":
-                logger.error("DynamoDB throughput limit exceeded.")
+                logger.exception("DynamoDB throughput limit exceeded.")
                 raise DataAccessError("DynamoDB throughput limit exceeded.") from e
-            logger.error(f"Failed to list tasks: {e}")
+            logger.exception(f"Failed to list tasks: {e}")
             raise DataAccessError(f"Failed to list tasks: {e}") from e
 
-    def create_task(self, task: Task) -> Task:
+    def create_task(self, task: Task):
         if not task.id:  # 例: パーティションキーが必須の場合
             logger.error("Task ID is required.")
             raise InvalidParameterError("Task ID", task.id, "Task ID is required.")
         try:
-            self.table.put_item(Item=task.dict())
-            return task
+            inp = task.model_dump()
+            inp["id"] = str(task.id)
+            inp["status"] = task.status.value
+            inp["priority"] = task.priority.value
+            self.table.put_item(Item=inp)
         except ClientError as e:
-            logger.error(f"Failed to create task: {e}")
+            logger.exception(f"Failed to create task: {e}")
             raise DataAccessError(f"Failed to create task: {e}") from e
 
     def get_task(self, task_id: str) -> Task:
@@ -68,37 +71,57 @@ class TaskDynamoDBRepository(ITaskRepository):
                 raise DataNotFoundError(f"Task with ID {task_id} not found.")
             return Task(**item)
         except ClientError as e:
-            logger.error(f"Failed to retrieve task with ID {task_id}: {e}")
+            logger.exception(f"Failed to retrieve task with ID {task_id}: {e}")
             raise DataAccessError(f"Failed to retrieve task with ID {task_id}: {e}") from e
 
-    def update_task(self, task_id: str, updates: dict) -> Task:
+    def update_task(self, updated_task: Task):
         """
-        指定されたタスクIDのタスクを更新します。
+        タスクを更新します。
 
-        :param task_id: 更新するタスクのID
-        :param updates: 更新するタスクの属性と値の辞書
+        :param updated_task: 更新するタスク
         :return: 更新されたタスク
-        :raises InvalidParameterError: タスクIDまたは更新データが無効な場合
+        :raises InvalidParameterError: タスクIDが無効な場合
         :raises DataNotFoundError: 指定されたタスクが存在しない場合
         :raises DataAccessError: DynamoDBへのアクセスに失敗した場合
         """
-        if "id" in updates:
-            raise InvalidParameterError(key="id", value=updates["id"], message="IDは更新できません。")
+        if not updated_task.id:
+            logger.error("Task ID is required for update.")
+            raise InvalidParameterError("Task ID", updated_task.id, "Task ID is required for update.")
+        try:
+            inp = updated_task.model_dump()
+            inp["id"] = str(updated_task.id)
+            inp["status"] = updated_task.status.value
+            inp["priority"] = updated_task.priority.value
+            self.table.update_item(
+                Key={"id": str(updated_task.id)},
+                UpdateExpression=(
+                    "SET #title = :title, #description = :description, "
+                    "#due_date = :due_date, #status = :status, #priority = :priority"
+                ),
+                ExpressionAttributeNames={
+                    "#title": "title",
+                    "#description": "description",
+                    "#due_date": "due_date",
+                    "#status": "status",
+                    "#priority": "priority",
+                },
+                ExpressionAttributeValues={
+                    ":title": updated_task.title,
+                    ":description": updated_task.description,
+                    ":due_date": updated_task.due_date,
+                    ":status": updated_task.status.value,
+                    ":priority": updated_task.priority.value,
+                },
+                ConditionExpression="attribute_exists(id)",
+            )
+            return updated_task
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                logger.exception(f"Task with ID {updated_task.id} not found.")
+                raise DataNotFoundError(f"Task with ID {updated_task.id} not found.") from e
 
-        update_expression = "SET " + ", ".join(f"{key} = :{key}" for key in updates.keys())
-        expression_attribute_values = {f":{key}": value for key, value in updates.items()}
-
-        response = self.table.update_item(
-            Key={"id": task_id},
-            UpdateExpression=update_expression,
-            ExpressionAttributeValues=expression_attribute_values,
-            ReturnValues="ALL_NEW",
-        )
-
-        if "Attributes" not in response:
-            raise DataNotFoundError(f"Task ID {task_id} が見つかりません。")
-
-        return Task(**response["Attributes"])
+            logger.exception(f"Failed to update task with ID {updated_task.id}: {e}")
+            raise DataAccessError(f"Failed to update task with ID {updated_task.id}: {e}") from e
 
     def delete_task(self, task_id: str) -> None:
         """
@@ -119,8 +142,8 @@ class TaskDynamoDBRepository(ITaskRepository):
             )
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                logger.error(f"Task with ID {task_id} not found.")
+                logger.exception(f"Task with ID {task_id} not found.")
                 raise DataNotFoundError(f"Task with ID {task_id} not found.") from e
 
-            logger.error(f"Failed to delete task with ID {task_id}: {e}")
+            logger.exception(f"Failed to delete task with ID {task_id}: {e}")
             raise DataAccessError(f"Failed to delete task with ID {task_id}: {e}") from e
